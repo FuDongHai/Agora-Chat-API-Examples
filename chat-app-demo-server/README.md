@@ -1,55 +1,63 @@
-# chat-app-demo-server
+# How to Implement the Server for the Agora Chat Demo
 
-## 简介
+## Introduction
 
-该服务为 Agora Demo 提供后端服务，可作为 App 使用 Agora Chat 功能的服务器端实现示例，该服务中包括 AI 机器人功能。
-AI 机器人实现原理：
-1.给 AgoraChat Demo 使用的 AppKey 开通实时消息回调功能。
-2.使用实时消息回调功能，将用户给 ChatBot 发送的消息实时的回调给 AppServer，AppServer 将给 ChatBot 发送的消息筛选出来。
-3.将消息发送给 Open AI，最后将 Open AI 回复的消息，在调用 REST API 将消息发送给用户，来完成用户与 Open AI 聊天的功能。
+This service provides backend support for Agora Demo, serving as a server implementation example for apps utilizing Agora Chat. It includes AI chatbot capabilities.
 
-用户与群聊 AI 机器人聊天流程图：
-![](../../../Group-ChatBot-en-Group ChatBot.png)
+The AI chatbot works in the following way:
 
-- 该服务目前提供的主要功能有
+1. Enable the real-time message callback function for the App Key used by Agora Chat Demo.
+2. Use the callback to forward messages sent by users to the chatbot to the App Server in real-time. The App Server screens out messages intended for the chatbot.
+3. Send these messages to OpenAI and use RESTful APIs to deliver OpenAI's responses to the user, thus enabling the interaction between users and the chatbot.
+
+Following is the flowchat of the chat between a user and the chatbot in a group:
+
+![wecom-temp-9681206a6f7a75f524bdb3c49f040622](/Users/easemob-dn0164/Desktop/wecom-temp-9681206a6f7a75f524bdb3c49f040622.png)
+
+- This service provides the following functions:
 
 ```
-1、用户登录；
-2、上传用户头像；
-3、获取群组头像；
-4、使用 Agora Chat 发送后回调消息，需要开通发送后消息回调功能（注意开通发送后消息回调时，将 'REST 消息是否需要回调' 设置为否），将 CallBackController 中的 url 配置到回调地址中，作为接收回调消息的地址；
-5、AI 机器人功能，使用的 OpenAI 实现与用户聊天的功能；
+1. User login
+2. Upload user avatars
+3. Fetch group avatars
+4. Message post-sending callback: Before using this function, you need to enable it on the Agora Console by configuring a post-sending callback rule to set "REST Message Required" to "No" and set the URL in CallBackController as the callback address.
+5. AI chatbot functionality powered by OpenAI for interactions with users.
+
 ```
 
-## 技术选择
+## Technology stack
 
 * [Spring Boot](https://spring.io/projects/spring-boot)
 * [OpenAI](https://platform.openai.com/docs/api-reference/introduction)
-* [发送后消息回调](https://docs.agora.io/en/agora-chat/reference/callbacks-events?platform=android)
+* [Post-sending callback](https://docs.agora.io/en/agora-chat/reference/callbacks-events?platform=android)
 
-## 主要组件
+## Core components
 
 * JDK 11
 * MySQL
 * Redis
 
-## 数据库使用说明
+## Database
 
-* 使用MySQL存储用户信息
-* 建表SQL见 [建表SQL](./doc/create_tables.sql)
+* MySQL for user information storage
+* [Table creation SQL statements](./chat-app-demo-server/doc/create_tables.sql)
 
-## 使用
+## How to use the service
 
-- 若初次使用 Agora，需前往 [Agora Console](https://sso2.agora.io/en/login?redirectUri=https%3A%2F%2Fsso2.agora.io%2Fapi%2Fv0%2Foauth%2Fauthorize%3Fresponse_type%3Dcode%26client_id%3Dconsole%26redirect_uri%3Dhttps%253A%252F%252Fconsole.agora.io%252Fapi%252Fv2%252Foauth%252Fen%26scope%3Dbasic_info) 注册成为 Agora 开发者；
+### Prerequisites
 
-- 注册成为 Agora 开发者后，开通 [Agora_chat](https://docs.agora.io/en/agora-chat/get-started/enable?platform=android) 服务；
-- 
-- 成为 Agora 开发者并成功开通 Agora Chat 服务后，可在自己的服务器部署服务
+- For the first use of Agora Chat, register as an Agora developer at [Agora Console](https://sso2.agora.io/en/login?redirectUri=https%3A%2F%2Fsso2.agora.io%2Fapi%2Fv0%2Foauth%2Fauthorize%3Fresponse_type%3Dcode%26client_id%3Dconsole%26redirect_uri%3Dhttps%253A%252F%252Fconsole.agora.io%252Fapi%252Fv2%252Foauth%252Fen%26scope%3Dbasic_info).
 
-  - 服务配置文件参考：[application.properties](./chat-app-demo-server/src/main/resources/application.properties)
+- After registration, activate [Agora Chat](https://docs.agora.io/en/agora-chat/get-started/enable?platform=android).
 
-  - AppKey组成规则：${orgName}#${appName}，拿到AppKey后可得到对应的orgName和appName；
-  - 使用自己的AppKey、Rest服务器域名、AppId、AppCert修改配置文件，如下：
+### Service Deployment
+
+Deploy the service at your server:
+
+- Configure the service by reference to [application.properties](./chat-app-demo-server/src/main/resources/application.properties)
+- Get the App Key. The App Key is in the format of ${orgName}#${appName}.
+- Update configurations with your App Key, REST server domain name, App ID, and App Cert:
+
     ```
         application.appkey=XXX
         application.baseUri=https://XXX.chat.agora.io.com
@@ -57,88 +65,91 @@ AI 机器人实现原理：
         application.agoraAppCert=XXX
     ```
 
-  - 安装MySQL，并根据[建表SQL](./doc/create_tables.sql)创建数据库及表，设置服务配置文件：
+- Install MySQL, create the database and tables by reference to [table creation SQL](./chat-app-demo-server/doc/create_tables.sql), and configure the server configuration file:
+
     ```
         spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
         spring.datasource.url=jdbc:mysql://localhost:3306/app_server?useSSL=false&autoReconnect=true&useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
         spring.datasource.username=root
         spring.datasource.password=123456789
     ```
-  - 安装Redis，设置Redis服务配置文件：
+- Install Redis and configure the Redis configuration file:
+
     ```
         spring.redis.channel.nodes=tcp://127.0.0.1:6379
         spring.redis.channel.password=
         spring.redis.channel.timeout=10000
         spring.redis.channel.expireTime=86400
     ```
-  - AI 机器人配置：
+- Configure the AI chatbot:
+
     ```
-        ## Whether to use an AI bot
+        ## Whether to use an AI chatbot
         agora.chat.robot.enable.switch=false
-
-        ## The bot's name, as the Agora chat user ID, needs to be registered by yourself.
+    
+        ## The chatbot's name, as with the Agora chat user ID, needs to be registered by yourself.
         agora.chat.robot.name=chatbot_ai
-
+    
         ## ChatGPT
         chatgpt.api.key=XXX
         chatgpt.url=https://api.openai.com/v1/chat/completions
         chatgpt.model=gpt-4
         chatgpt.max.tokens=1700
         chatgpt.temperature=0.1
-
+    
         chatgpt.image.url=https://api.openai.com/v1/images/generations
         chatgpt.image.model=dall-e-3
         chatgpt.image.size=1024x1024
         chatgpt.image.n=1
     ```
 
-  - 启动服务即可
+- Start the service.
 
 ## API
 
-### 用户登录
+### Log in to your server
 
-用户登录并获取用户 token，用于客户端 sdk 登录 Agora Chat 服务器。
+Log in to your server and get the user token for you to log in to the Agora Chat server.
 
 **Path:** `http://localhost:8095/app/chat/user/login`
 
-**HTTP Method:** `POST`
+**HTTP method:** `POST`
 
-**Request Headers:**
+**Request headers:**
 
-| Param        | description      |
-| ------------ | ---------------- |
-| Content-Type | application/json |
+| Param        | description       |
+| ------------ | ----------------- |
+| Content-Type | application/json. |
 
-**Request Body example:**
+**Request body example**
 
 {"userAccount":"tom", "userPassword":"123456"}
 
-**Request Body params:**
+**Request body params:**
 
 | Param       | Data Type | description |
 |-------------| --------- |-------------|
-| userAccount | String    | 用户名         |
-| userPassword     | String    | 用户密码        |
+| userAccount | String    | User ID.        |
+| userPassword     | String    | Login password.        |
 
-**request example:**
+**Request example:**
 
 ```
 curl -X POST -H 'Content-Type: application/json' -H 'Accept: application/json' 'http://localhost:8095/app/chat/user/login' -d '{"userAccount":"tom", "userPassword":"123456"}'
 ```
 
-**Response Parameters:**
+**Response parameters**
 
 | Param           | Data Type | description                          |
 | --------------- |-----------|--------------------------------------|
-| statusCode            | Integer   | 响应状态码                                |
-| token     | String    | 用户 token，用于客户端 sdk 登录 Agora Chat 服务器 |
-| accessToken     | String    | 与 token 定义相同                         |
-| expireTimestamp     | Long      | Token 的过期时间，毫秒时间戳                    |
-| chatUserName | String    | agora chat username                  |
-| avatarUrl | String    | 用户头像 url                             |
+| statusCode            | Integer   | Response status code.                                |
+| token     | String    | The user token for the client SDK to log in to the Agora Chat server.|
+| accessToken     | String    | Same as the `token` parameter.   |
+| expireTimestamp     | Long      | Token expiry timestamp in the unit of millisecond.                   |
+| chatUserName | String    | The user ID for login to Agora Chat.            |
+| avatarUrl | String    | The URL of the user avatar.                           |
 
-**response example:**
+**Response example**
 
 ```json
 {
@@ -154,41 +165,42 @@ curl -X POST -H 'Content-Type: application/json' -H 'Accept: application/json' '
 
 ---
 
-### 上传用户头像
+### Upload user avatar
 
 **Path:** `http://localhost:8095/app/chat/user/{userAccount}/avatar/upload`
 
-**HTTP Method:** `POST`
+**HTTP method:** `POST`
 
-**Request Headers:**
+**Request headers:**
 
 | Param        | description      |
 | ------------ | ---------------- |
-| Content-Type | multipart/form-data |
+| Content-Type | multipart/form-data. |
 
-**Request Body example:**
+**Request body example:**
+
 file=@/Users/XXX/image.jpg
 
-**Request Body params:**
+**Request body params:**
 
 | Param   | description |
 |---------|-------------|
-| file    | 头像本地路径      |
+| file    | Local avatar path.     |
 
-**request example:**
+**Request example:**
 
 ```
 curl -X POST http://localhost:8095/app/chat/user/tom/avatar/upload -H 'content-type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' -F file=@/Users/XXX/image.jpg
 ```
 
-**Response Parameters:**
+**Response parameters:**
 
 | Param           | Data Type | description                |
 | --------------- |-----------|----------------------------|
-| statusCode            | Integer   | 响应状态码                      |
-| avatarUrl | String    | 用户头像 url                   |
+| statusCode            | Integer   | Response status code.                     |
+| avatarUrl | String    | The URL of the user avatar.                  |
 
-**response example:**
+**Response example:**
 
 ```json
 {
@@ -200,31 +212,31 @@ curl -X POST http://localhost:8095/app/chat/user/tom/avatar/upload -H 'content-t
 
 ---
 
-### 获取群组头像
+### Get the group avatar
 
 **Path:** `http://localhost:8095/app/chat/group/{groupId}/avatarurl`
 
-**HTTP Method:** `GET`
+**HTTP method:** `GET`
 
-**request example:**
+**Request example:**
 
 ```
 curl -X GET http://localhost:8095/app/chat/group/242023244300303/avatarurl
 ```
 
-**Response Parameters:**
+**Response parameters:**
 
 | Param           | Data Type | description |
 | --------------- |-----------|-------------|
-| code            | Integer   | 响应状态码       |
-| avatarUrl | String    | 群组头像 url    |
+| code            | Integer   | Response status code.       |
+| avatarUrl | String    | The URL of the group avatar.    |
 
-**response example:**
+**Response example:**
 
 ```json
 {
-    "code": 200,
-    "avatarUrl": "xxx"
+  "code": 200,
+  "avatarUrl": "xxx"
 }
 ```
 
